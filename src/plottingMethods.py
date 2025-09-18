@@ -1,0 +1,478 @@
+from src.ManyBodyHamiltonian import ManyBodyHamiltonian
+import matplotlib.pyplot as plt
+import numpy as np
+from matplotlib.patches import Patch
+from matplotlib.colors import LogNorm
+from matplotlib.cm import get_cmap
+from matplotlib.animation import FuncAnimation
+from qutip import Bloch, Qobj, Result
+
+
+import os
+import logging
+
+def setupLogger(logDir):
+        os.makedirs(logDir, exist_ok=True)
+        logPath = os.path.join(logDir, "log_results.txt")
+
+        logging.basicConfig(
+            level=logging.INFO,
+            format="%(asctime)s [%(levelname)s] %(message)s",
+            handlers=[
+                logging.FileHandler(logPath),
+                logging.StreamHandler()
+            ]
+        )
+
+#---------------------- Eigenvalues, spectrum and Hamiltonian ------------------------------------------------------------------
+
+def plot_eigenvalues_bipartition(
+    results_list,
+    x_values,
+    mbh: ManyBodyHamiltonian,
+    basis_name: str,
+    splitValue: int,
+    max_eigenvalues: int = None,
+    figsize=(8, 5),
+    scatter_kwargs=None
+):
+    """
+    Plots eigenvalues for each point in x_values, coloring each eigenvalue according to the index of the most similar basis vector.
+
+    Args:
+        results_list: List of (eigs, eigvecs) tuples, one for each x value.
+        x_values: Array-like, values for the x-axis (length must match results_list).
+        mbh: ManyBodyHamiltonian object (must have classify_eigenstate_in_basis).
+        basis_name: Name of the basis to use for classification.
+        splitValue: Integer, index to split coloring (<= splitValue: blue, > splitValue: red).
+        max_eigenvalues: Maximum number of eigenvalues to plot (from lowest up).
+        figsize: Tuple, figure size.
+        scatter_kwargs: Optional dict, extra kwargs for plt.scatter.
+
+    Returns:
+        fig, ax: The matplotlib figure and axes objects.
+    """
+    if scatter_kwargs is None:
+        scatter_kwargs = {}
+
+    eigvals = []
+    color_indices = []
+
+    # Precompute all eigenvalues and color indices
+    for i, (eigs, eigvecs) in enumerate(results_list):
+        if max_eigenvalues is not None:
+            eigs = eigs[:max_eigenvalues]
+            eigvecs = eigvecs[:, :max_eigenvalues]
+        eigvals.append(eigs)
+        color_row = []
+        basis_labels = mbh.basesDict[basis_name]['labels']
+        for j in range(len(eigs)):
+            eigvec = eigvecs[:, j]
+            classification = mbh.classify_eigenstate_in_basis(eigvec, basis_name)
+            max_label = classification[0]['label']
+            idx = basis_labels.index(max_label)
+            # Use -1 for blue, +1 for red (for use with cmap='bwr')
+            color_row.append(-1 if idx <= splitValue else 1)
+        color_indices.append(color_row)
+
+    eigvals = np.array(eigvals)  # shape (totalPoints, num_eigenvalues)
+    color_indices = np.array(color_indices)  # shape (totalPoints, num_eigenvalues)
+    x_values = np.array(x_values)
+
+    fig, ax = plt.subplots(figsize=figsize)
+
+    # Plot each eigenvalue as a line of points with color
+    for j in range(eigvals.shape[1]):
+        ax.scatter(
+            x_values,
+            eigvals[:, j],
+            c=color_indices[:, j],
+            cmap='bwr',
+            vmin=-1, vmax=1,
+            **scatter_kwargs
+        )
+
+    ax.set_xlabel("Parameter")
+    ax.set_ylabel("Eigenvalue")
+    ax.set_title("Eigenvalues bipartitioned by basis similarity")
+    plt.tight_layout()
+    return fig, ax
+
+
+def plot_eigenvalues_state_similarity(
+    results_list,
+    x_values,
+    mbh,
+    basis_name: str,
+    max_eigenvalues: int = None,
+    figsize=(8, 5),
+    scatter_kwargs=None,
+    color_palette_name='tab20'
+):
+    """
+    Plots eigenvalues for each point in x_values, coloring each eigenvalue according to the most similar basis state.
+
+    Args:
+        results_list: List of (eigs, eigvecs) tuples, one for each x value.
+        x_values: Array-like, values for the x-axis (length must match results_list).
+        mbh: ManyBodyHamiltonian object (must have classify_eigenstate_in_basis).
+        basis_name: Name of the basis to use for classification.
+        max_eigenvalues: Maximum number of eigenvalues to plot (from lowest up).
+        figsize: Tuple, figure size.
+        scatter_kwargs: Optional dict, extra kwargs for plt.scatter.
+        color_palette_name: Name of matplotlib colormap to use for state coloring.
+
+    Returns:
+        fig, ax: The matplotlib figure and axes objects.
+    """
+    if scatter_kwargs is None:
+        scatter_kwargs = {}
+
+    basis_labels = mbh.basesDict[basis_name]['labels']
+    base_cmap = get_cmap(color_palette_name)
+    N = 20 if color_palette_name == 'tab20' else base_cmap.N
+    color_palette = [base_cmap(i / N) for i in range(N)]
+
+    eigvals = []
+    color_indices = []
+    unique_colors_used = {}
+
+    # Precompute all eigenvalues and color indices
+    for i, (eigs, eigvecs) in enumerate(results_list):
+        if max_eigenvalues is not None:
+            eigs = eigs[:max_eigenvalues]
+            eigvecs = eigvecs[:, :max_eigenvalues]
+        eigvals.append(eigs)
+        color_row = []
+        for j in range(len(eigs)):
+            eigvec = eigvecs[:, j]
+            classification = mbh.classify_eigenstate_in_basis(eigvec, basis_name)
+            max_label = classification[0]['label']
+            idx = basis_labels.index(max_label)
+            color_row.append(idx)
+            if idx % N not in unique_colors_used:
+                unique_colors_used[idx % N] = color_palette[idx % N]
+        color_indices.append(color_row)
+
+    eigvals = np.array(eigvals)
+    color_indices = np.array(color_indices)
+    x_values = np.array(x_values)
+
+    fig, ax = plt.subplots(figsize=figsize)
+
+    for j in range(eigvals.shape[1]):
+        colors = [color_palette[idx % N] for idx in color_indices[:, j]]
+        ax.scatter(
+            x_values,
+            eigvals[:, j],
+            color=colors,
+            **scatter_kwargs
+        )
+
+    ax.set_xlabel("Parameter")
+    ax.set_ylabel("Eigenvalue")
+    ax.set_title("Eigenvalues colored by most similar basis state")
+    ax.grid(True)
+
+    # Add legend for unique colors used
+    handles = []
+    for idx, rgba in sorted(unique_colors_used.items()):
+        label = basis_labels[idx]
+        handles.append(Patch(facecolor=rgba, edgecolor='black', label=label))
+    if handles:
+        ax.legend(
+            handles=handles,
+            loc='center left',
+            bbox_to_anchor=(1.02, 0.5),
+            title='State similarity',
+            frameon=False
+        )
+
+    plt.tight_layout()
+    return fig, ax
+
+
+def plot_hamiltonian_heatmap(
+    H: np.ndarray,
+    sector_sizes: dict = None,
+    figsize=(8, 8),
+    min_val: float = 1e-5
+):
+    """
+    Plots a heatmap of the absolute value of a Hamiltonian matrix, with optional block boundaries and labels inside the matrix.
+
+    Args:
+        H: np.ndarray, Hamiltonian matrix in the chosen basis.
+        sector_sizes: dict, mapping sector labels to their sizes (e.g. {'(2,0)': 6, '(1,1)': 16, '(0,2)': 6}).
+        figsize: tuple, figure size.
+        min_val: float, minimum value for log scale.
+
+    Returns:
+        fig, ax: The matplotlib figure and axes objects.
+    """
+    absH = np.abs(H).copy()
+    absH[absH < min_val] = min_val
+
+    fig, ax = plt.subplots(figsize=figsize)
+    im = ax.imshow(absH, cmap='viridis', norm=LogNorm(vmin=min_val, vmax=np.max(absH)))
+
+    # Draw block boundaries and labels if sector_sizes is provided
+    if sector_sizes is not None:
+        boundaries = np.cumsum(list(sector_sizes.values()))
+        for pos in boundaries[:-1]:
+            ax.axhline(pos - 0.5, color='white', linewidth=1.5)
+            ax.axvline(pos - 0.5, color='white', linewidth=1.5)
+
+        # Block labels inside the matrix
+        starts = np.cumsum([0] + list(sector_sizes.values())[:-1])
+        labels = list(sector_sizes.keys())
+        for start, size, label in zip(starts, sector_sizes.values(), labels):
+            center = start + size / 2 - 0.5
+            ax.text(center, center, label, ha='center', va='center', fontsize=12, color='white', weight='bold', alpha=0.8)
+
+    ax.set_xticks([])
+    ax.set_yticks([])
+    fig.colorbar(im, ax=ax, label='log(|H|)', shrink=0.7)
+    plt.tight_layout()
+    return fig, ax
+
+
+
+
+
+
+# -------------------------------- Dynamics ------------------------------------------------------------
+
+def plot_protocol_results(result, cutoffN, labels, sweepvalues, subspace0Indices, subspace1Indices, tlist):
+    """
+    Generate plots for a general protocol.
+    Populations will be obtained from result.
+    sweepvalues is agnostic with respect which parameter was changed in the protocol, so axes labels must be changed externally.
+    labels make the correspondence between the position in the matrix representation of the density matrix and the name given to that base state.
+    subspaceIndices indicate which index correspond to each state (no labels needed, just indices). For example, in the SWT representation with 4x4 Hamiltonians,
+    singlet subspace have indices 1 and 2, while triplet one have 0 and 3.
+
+    Args:
+        result: qutip.Result from mesolve
+        cutoffN: int, number of states (defaults to 4 if None)
+        labels: list of str, basis state labels
+        sweepvalues: np.ndarray, sweep values during protocol
+        subspace0Indices: list[int], indices for subspace |0>
+        subspace1Indices: list[int], indices for subspace |1>
+        slopesShapes: list, protocol details [[start, end, duration], ...]
+        interactionDetuning: float, reference detuning
+    """
+
+    populations = np.array([state.diag() for state in result.states])
+
+    # --- Create figure ---
+    fig, (ax1, ax2, ax3) = plt.subplots(
+        nrows=3, sharex=True, figsize=(10, 10), height_ratios=[3, 1, 1]
+    )
+
+    # Panel 1: Individual populations
+    for i in range(min(cutoffN, len(labels))):
+        ax1.plot(tlist, populations[:, i], label=labels[i])
+    ax1.set_ylabel("Population")
+    ax1.set_title("Population dynamics")
+    ax1.legend(loc="center left", bbox_to_anchor=(1.05, 0.5))
+    ax1.grid()
+
+    # Panel 2: Detuning
+    ax2.plot(tlist, sweepvalues, color="black", linewidth=2)
+    ax2.grid()
+
+    # Panel 3: Subspace populations
+    sum1Subspace = np.sum(populations[:, subspace1Indices], axis=1)
+    sum0Subspace = np.sum(populations[:, subspace0Indices], axis=1)
+    sumTotal = sum0Subspace + sum1Subspace
+
+    ax3.plot(tlist, sum0Subspace, label="|0> read out", linestyle="--", color="tab:blue")
+    ax3.plot(tlist, sum1Subspace, label="|1> read out", linestyle="--", color="tab:green")
+    ax3.plot(tlist, sumTotal, label="Total", linestyle="-", color="tab:red")
+    ax3.set_xlabel("Time (ns)")
+    ax3.set_ylabel("Populations")
+    ax3.set_title("Subspace populations")
+    ax3.legend()
+    ax3.grid()
+
+    plt.subplots_adjust(hspace=0.4, right=0.75)
+
+    return fig, (ax1, ax2, ax3), populations
+
+def rhoToBlochHybrid(rhoFull, iSym, iAnti, detuning=None, detThreshold=None, sRep=None, tRep=None):
+    """Compute Bloch vector (sx, sy, sz) for ST qubit given full density matrix and symmetry indices."""
+    rho = Qobj(np.asarray(rhoFull, dtype=complex)) if not isinstance(rhoFull, Qobj) else rhoFull
+
+    # Dynamics choice of representative for the singlet (1,1 or 2,0 representative based on detuning)
+    if detuning is not None and detThreshold is not None and len(iSym) > 1:
+        sRepDynamic = iSym[1] if detuning > detThreshold else iSym[0]
+    else:
+        sRepDynamic = sRep if sRep is not None else iSym[0]
+
+    tRep = tRep if tRep is not None else iAnti[0]
+
+    # populations projectors
+    dim = rho.shape[0]
+    eye = np.eye(dim)
+    P_S = sum(Qobj(eye[:, [i]]) * Qobj(eye[:, [i]]).dag() for i in iSym)
+    P_T = sum(Qobj(eye[:, [i]]) * Qobj(eye[:, [i]]).dag() for i in iAnti)
+    P_Q = P_S + P_T
+
+    # Coherence only with representatives
+    ketS = Qobj(eye[:, [sRepDynamic]])
+    ketT = Qobj(eye[:, [tRep]])
+    Sx = ketS * ketT.dag() + ketT * ketS.dag()
+    Sy = -1j * ketS * ketT.dag() + 1j * ketT * ketS.dag()
+
+    # Compute population in each subspace
+    p = (rho * P_Q).tr().real
+    if p < 1e-12:
+        return np.array([0.0, 0.0, 0.0])
+
+    # Compute coherences
+    sx = ((rho * Sx).tr() / p).real
+    sy = ((rho * Sy).tr() / p).real
+
+    # Z axis can be understood as the hole populations due to read out
+    sz = (((rho * P_S).tr() - (rho * P_T).tr()) / p).real
+
+    return np.array([sx, sy, sz], dtype=float)
+
+
+def plot_bloch_sphere(result: Result, tlist, labels, iSym, iAnti, sweepValues, actualDetuning, detThreshold=None,
+                      cutOffN=None, nFrames=300, fps=25):
+    """
+    Create animation of ST qubit Bloch vector and population dynamics.
+
+    Returns:
+        fig, ani, populations, blochVectors
+    """
+    if isinstance(actualDetuning, float):
+        actualDetuning = [actualDetuning for _ in range(len(sweepValues))]
+
+    states = result.states if hasattr(result, "states") else result
+    populations = np.array([state.diag() for state in states])
+
+    # Precompute Bloch vectors
+    blochVectors = np.array([
+        rhoToBlochHybrid(rho, iSym, iAnti, detuning=actualDetuning[k], detThreshold=detThreshold)
+        for k, rho in enumerate(states)
+    ])
+
+    fig = plt.figure(figsize=(12, 10))
+    gs = fig.add_gridspec(3, 2, height_ratios=[1.0, 0.3, 1.0])
+    ax1 = fig.add_subplot(gs[0, 0])
+    ax_legend = fig.add_subplot(gs[1, 0])
+    ax2 = fig.add_subplot(gs[2, 0])
+    ax3 = fig.add_subplot(gs[0, 1])
+    ax4 = fig.add_subplot(gs[1:, 1], projection="3d")
+
+    # Plot populations
+    lines = []
+    for i in range(min(cutOffN, len(labels))):
+        line, = ax1.plot(tlist, populations[:, i], label=labels[i])
+        lines.append(line)
+    ax1.set_ylabel("Population")
+    ax1.set_title("Individual populations")
+    ax1.grid()
+
+    # Legend in separate axis
+    ax_legend.axis("off")
+    ax_legend.legend(lines, [l.get_label() for l in lines], loc="center", ncol=2)
+
+    # Detuning sweep
+    ax2.plot(tlist, sweepValues, color="black", linewidth=2)
+    ax2.set_ylabel("Parameter changed")
+    ax2.set_xlabel("Time (ns)")
+    ax2.set_title("sweep")
+    ax2.grid()
+
+    # Subspace populations
+    sumTriplet = np.sum(populations[:, iAnti], axis=1)
+    sumSinglet = np.sum(populations[:, iSym], axis=1)
+    sumTotal = sumTriplet + sumSinglet
+    ax3.plot(tlist, sumTriplet, "--", label="Triplet", color="tab:blue")
+    ax3.plot(tlist, sumSinglet, "--", label="Singlet", color="tab:green")
+    ax3.plot(tlist, sumTotal, "-", label="Total", color="tab:red")
+    ax3.set_xlabel("Time (ns)")
+    ax3.set_ylabel("Populations")
+    ax3.set_title("Subspace populations")
+    ax3.legend()
+    ax3.grid()
+
+    # Vertical lines
+    vline1 = ax1.axvline(x=tlist[0], color="red", linestyle=":")
+    vline2 = ax2.axvline(x=tlist[0], color="red", linestyle=":")
+    vline3 = ax3.axvline(x=tlist[0], color="red", linestyle=":")
+
+    # Bloch sphere
+    b = Bloch(fig=fig, axes=ax4)
+    b.vector_color = ["#1f77b4"]
+    b.point_color = ["#2ca02c"]
+
+    def drawBloch(i):
+        b.clear()
+        b.add_vectors(blochVectors[i])
+        k = max(0, i - 10)
+        b.add_points(blochVectors[k:i+1].T)
+        b.make_sphere()
+
+    def update(i):
+        drawBloch(i)
+        vline1.set_xdata([tlist[i], tlist[i]])
+        vline2.set_xdata([tlist[i], tlist[i]])
+        vline3.set_xdata([tlist[i], tlist[i]])
+        return []
+
+    framesToSave = np.linspace(0, len(tlist) - 1, nFrames, dtype=int) if nFrames < len(tlist) else range(len(tlist))
+    ani = FuncAnimation(fig, update, frames=framesToSave, interval=1000/fps, blit=False)
+
+    return fig, ani, populations, blochVectors
+
+
+# Rabi frequency
+
+
+def plotCurrentMap(currents, tlistNano, detuningList, paramName, paramValue, symDetuning):
+    fig, ax = plt.subplots(figsize=(10, 6))
+    im = ax.imshow(
+        currents,
+        aspect="auto",
+        origin="lower",
+        extent=[tlistNano[0], tlistNano[-1], detuningList[0], detuningList[-1]],
+        cmap="viridis"
+    )
+    fig.colorbar(im, ax=ax, label="I (no Pauli Blockade)")
+    ax.axhline(symDetuning, color="red", linestyle="--", label=f"Central detuning: {symDetuning:.4f} meV")
+    ax.set_xlabel("Time (ns)")
+    ax.set_ylabel("E_R (meV)")
+    ax.set_title(f"Current map ({paramName} = {paramValue:.4f})")
+    ax.legend()
+    return fig, ax
+
+
+def plotRabiAndSensitivity(detuningList, freqsNs, grads, sweetIndices, symDetuning, paramName, paramValue):
+    fig, ax1 = plt.subplots(figsize=(7, 4))
+    ax1.plot(detuningList, freqsNs, "o-", color="tab:blue", label="Rabi freq (1/ns)", markersize=5)
+    ax1.scatter(detuningList[sweetIndices], freqsNs[sweetIndices], c="red", s=5, label="Sweet spots")
+    ax1.axvline(symDetuning, color="green", linestyle="--", label=f"Central detuning: {symDetuning:.4f} meV")
+    ax1.set_xlabel("E_R (meV)")
+    ax1.set_ylabel("Frequency (1/ns)", color="tab:blue")
+    ax1.tick_params(axis="y", labelcolor="tab:blue")
+    ax1.grid(True)
+
+    ax2 = ax1.twinx()
+    ax2.plot(detuningList, np.abs(grads), "o-", color="tab:orange", markersize=5, label="|df/dε|")
+    ax2.scatter(detuningList[sweetIndices], np.abs(grads)[sweetIndices], c="red", s=5)
+    ax2.set_ylabel("|df/dε| (1/ns per meV)", color="tab:orange")
+    ax2.set_yscale("log")
+    ax2.tick_params(axis="y", labelcolor="tab:orange")
+
+    lines_1, labels_1 = ax1.get_legend_handles_labels()
+    lines_2, labels_2 = ax2.get_legend_handles_labels()
+    ax2.legend(lines_1 + lines_2, labels_1 + labels_2, loc="upper right")
+
+    fig.suptitle(f"Rabi frequency and sensitivity ({paramName} = {paramValue:.4f})")
+    fig.tight_layout()
+    return fig, (ax1, ax2)
