@@ -37,14 +37,14 @@ dqd = DQD21(params=params)
 
 # General parameters
 
-totalPoints = 300
+totalPoints = 3000
 T1 = 0.0  # Spin relaxation time in ns
 T2star = 0.0  # Dephasing time in ns
 cutOffN = None
 
 # Characteristic values obtained from further analysis
-interactionDetuning = 4.3502
-expectedPeriod = 1.48  # ns
+interactionDetuning = 3.6102
+expectedPeriod = 11.41  # ns
 peakDetuningreadOut = dqd.params[DQDParameters.U0.value]
 
 

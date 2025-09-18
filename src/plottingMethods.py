@@ -453,14 +453,18 @@ def plot_rabi_vs_time(currents, tlistNano, detuningList, paramName, paramValue, 
 
 def formatFrequencies(freqsGHz):
     maxFreq = np.max(freqsGHz)
-    if maxFreq >= 1:
+    try:
+        if maxFreq >= 1:
+            return freqsGHz, "GHz"
+        elif maxFreq >= 1e-3:
+            return freqsGHz * 1e3, "MHz"
+        elif maxFreq >= 1e-6:
+            return freqsGHz * 1e6, "kHz"
+        else:
+            return freqsGHz * 1e9, "Hz"
+        
+    except:
         return freqsGHz, "GHz"
-    elif maxFreq >= 1e-3:
-        return freqsGHz * 1e3, "MHz"
-    elif maxFreq >= 1e-6:
-        return freqsGHz * 1e6, "kHz"
-    else:
-        return freqsGHz * 1e9, "Hz"
 
 def plot_combined_rabi_results(arrayOfParameters, rabiFreqs_sym, rabiPeriods_sym, symmetryAxes, parameterToChange):
     """

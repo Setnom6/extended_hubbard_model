@@ -193,14 +193,14 @@ if __name__ == "__main__":
         params = json.load(f)
 
     # --- Simulation parameters ---
-    interactionDetuningList = np.linspace(4.25, 5.25, 500)
+    interactionDetuningList = np.linspace(3.0, 4.5, 500)
     cutOffN = None
-    totalPoints = 500
-    maxTime = 3.0
+    totalPoints = 2000
+    maxTime = 50.0
     T1 = 0.0
     T2star = 0.0
     parameterToChange = DQDParameters.GV_L.value
-    arrayOfParameters = np.arange(0.5, 1.5, 0.1)*params[DQDParameters.GV_R.value]
+    arrayOfParameters = np.arange(0.66, 1.5, 0.1)*params[DQDParameters.GV_R.value]
     tlistNano = np.linspace(0, maxTime, totalPoints)
     numCores = min(24, cpu_count())
     logging.info(f"Using {numCores} cores with joblib.")
