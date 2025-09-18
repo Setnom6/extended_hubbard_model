@@ -431,10 +431,10 @@ def plot_bloch_sphere(result: Result, tlist, labels, iSym, iAnti, sweepValues, a
     return fig, ani, populations, blochVectors
 
 
-# Rabi frequency
+# ----------------------------------------- Rabi frequency analysis ---------------------------
 
 
-def plotCurrentMap(currents, tlistNano, detuningList, paramName, paramValue, symDetuning):
+def plot_rabi_vs_time(currents, tlistNano, detuningList, paramName, paramValue, symDetuning):
     fig, ax = plt.subplots(figsize=(10, 6))
     im = ax.imshow(
         currents,
@@ -450,3 +450,127 @@ def plotCurrentMap(currents, tlistNano, detuningList, paramName, paramValue, sym
     ax.set_title(f"Current map ({paramName} = {paramValue:.4f})")
     ax.legend()
     return fig, ax
+
+def formatFrequencies(freqsGHz):
+    maxFreq = np.max(freqsGHz)
+    if maxFreq >= 1:
+        return freqsGHz, "GHz"
+    elif maxFreq >= 1e-3:
+        return freqsGHz * 1e3, "MHz"
+    elif maxFreq >= 1e-6:
+        return freqsGHz * 1e6, "kHz"
+    else:
+        return freqsGHz * 1e9, "Hz"
+
+def plot_combined_rabi_results(arrayOfParameters, rabiFreqs_sym, rabiPeriods_sym, symmetryAxes, parameterToChange):
+    """
+    Plots Rabi frequency, Rabi period, and central detuning in a single figure.
+    Returns fig and axes for further use.
+    """
+    fig, axes = plt.subplots(3, 1, figsize=(8, 12), sharex=True)
+
+    freqsScaled, unit = formatFrequencies(rabiFreqs_sym)
+
+    # Rabi frequency
+    axes[0].plot(arrayOfParameters, freqsScaled, "o-", label="Rabi frequency central detuning")
+    axes[0].set_ylabel(f"Frequency ({unit})")
+    axes[0].set_title(f"Rabi frequency vs {parameterToChange}")
+    axes[0].legend()
+    axes[0].grid(True)
+
+    # Rabi period
+    axes[1].plot(arrayOfParameters, rabiPeriods_sym, "o-", label="Rabi period central detuning")
+    axes[1].set_ylabel("Period (ns)")
+    axes[1].set_title(f"Rabi period vs {parameterToChange}")
+    axes[1].legend()
+    axes[1].grid(True)
+
+    # Central detuning
+    axes[2].plot(arrayOfParameters, symmetryAxes, "o-", label="Central detuning")
+    axes[2].set_xlabel(f"{parameterToChange}")
+    axes[2].set_ylabel("Detuning (meV)")
+    axes[2].set_title(f"Central detuning vs {parameterToChange}")
+    axes[2].legend()
+    axes[2].grid(True)
+
+    plt.tight_layout()
+    return fig, axes
+
+def plot_2D_rabi_scan(detuningList, bParallelList, rabiFreqMap, grad_detuning, dominanceMap):
+    """
+    Creates 2D plots of the results.
+    Regions excluded (NaN in rabiFreqMap) are shown in light gray.
+    """
+    fig, axes = plt.subplots(2, 2, figsize=(15, 12))
+
+    # Selected indices of specific b_values
+    selected_indices = [
+        np.argmin(np.abs(bParallelList - (-0.85))),
+        np.argmin(np.abs(bParallelList - (-0.25))),
+        np.argmin(np.abs(bParallelList - (0.15))),
+        np.argmin(np.abs(bParallelList - (0.75)))
+    ]
+    colors = ['red', 'blue', 'green', 'purple']
+    
+    # Create modified colormap to show NaN as gray
+    cmap_rabi = get_cmap('viridis_r').copy()
+    cmap_rabi.set_bad(color='lightgray')
+    
+    # 1. Rabi frequency map
+    im1 = axes[0, 0].imshow(rabiFreqMap, aspect='auto', 
+                            extent=[detuningList[0], detuningList[-1], 
+                                    bParallelList[0], bParallelList[-1]],
+                            origin='lower', cmap=cmap_rabi)
+    axes[0, 0].set_xlabel('Detuning (meV)')
+    axes[0, 0].set_ylabel('B_parallel (T)')
+    axes[0, 0].set_title('Rabi Frequency Map (GHz)')
+    plt.colorbar(im1, ax=axes[0, 0], label="GHz")
+
+    for idx, color in zip(selected_indices, colors):
+        axes[0, 0].axhline(y=bParallelList[idx], color=color, linestyle='--', alpha=0.7, linewidth=1.5)
+    
+    # 2. Gradient with sign with respect to detuning
+    im2 = axes[0, 1].imshow(grad_detuning, aspect='auto',
+                             extent=[detuningList[0], detuningList[-1],
+                                     bParallelList[0], bParallelList[-1]],
+                             origin='lower', cmap='bwr', vmin=-np.max(np.abs(grad_detuning)), vmax=np.max(np.abs(grad_detuning)))
+    axes[0, 1].set_xlabel('Detuning (meV)')
+    axes[0, 1].set_ylabel('B_parallel (T)')
+    axes[0, 1].set_title('Gradient wrt Detuning (GHz per meV)')
+    plt.colorbar(im2, ax=axes[0, 1], label="d(freq)/d(detuning)")
+
+    for idx, color in zip(selected_indices, colors):
+        axes[0, 1].axhline(y=bParallelList[idx], color=color, linestyle='--', alpha=0.7, linewidth=1.5)
+    
+    # 3. Frequency dominance map
+    im3 = axes[1, 0].imshow(dominanceMap, aspect='auto',
+                             extent=[detuningList[0], detuningList[-1],
+                                     bParallelList[0], bParallelList[-1]],
+                             origin='lower', cmap='inferno')
+    axes[1, 0].set_xlabel('Detuning (meV)')
+    axes[1, 0].set_ylabel('B_parallel (T)')
+    axes[1, 0].set_title('Dominance: Peak Height / FWHM')
+    plt.colorbar(im3, ax=axes[1, 0], label="Dominance (Height/GHz)")
+
+    for idx, color in zip(selected_indices, colors):
+        axes[1, 0].axhline(y=bParallelList[idx], color=color, linestyle='--', alpha=0.7, linewidth=1.5)
+    
+    # 4. Transverse cuts (frequency only)
+    ax4 = axes[1, 1]
+
+    for idx, color in zip(selected_indices, colors):
+        b_val = bParallelList[idx]
+        rabiRow = rabiFreqMap[idx, :]
+
+        # Frequency (left axis)
+        ax4.plot(detuningList, rabiRow, color=color, label=f'B_parallel = {b_val:.3f} T')
+
+    # Axes and legend configuration
+    ax4.set_xlabel('Detuning (meV)')
+    ax4.set_ylabel('Frequency (GHz)')
+    ax4.set_title('Transverse Cuts')
+    ax4.legend(loc='upper right')
+    ax4.grid(True)
+    
+    plt.tight_layout()
+    return fig, axes

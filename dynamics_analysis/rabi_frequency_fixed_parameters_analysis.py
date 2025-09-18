@@ -21,7 +21,7 @@ if root_dir not in sys.path:
     sys.path.insert(0, root_dir)
 
 from DQD21 import DQD21, DQDParameters, BasesNames
-from src.plottingMethods import setupLogger, plotCurrentMap
+from src.plottingMethods import setupLogger, plot_rabi_vs_time, plot_combined_rabi_results
 
 
 # ---------------- dynamics ----------------
@@ -116,43 +116,14 @@ def findSweetSpotsFromFreqs(currents, detuningList, times, minCurrentFraction=0.
         minIdx = np.argmin(absGrads)
         sweetIndices = np.array([minIdx])
     return sweetIndices, grads
+    
 
-
-def formatFrequencies(freqsGHz):
-    maxFreq = np.max(freqsGHz)
-    if maxFreq >= 1:
-        return freqsGHz, "GHz"
-    elif maxFreq >= 1e-3:
-        return freqsGHz * 1e3, "MHz"
-    elif maxFreq >= 1e-6:
-        return freqsGHz * 1e6, "kHz"
-    else:
-        return freqsGHz * 1e9, "Hz"
-
-
-
-# ---------------- main ----------------
-if __name__ == "__main__":
-    setupLogger(current_dir)
-    logging.info("Starting dynamics protocol...")
-
-    parameters_file = os.path.join(root_dir, "global_parameters.json")
-    with open(parameters_file, "r") as f:
-        params = json.load(f)
-
-    interactionDetuningList = np.linspace(4.2, 4.6, 500)
-    cutOffN =None
-    totalPoints = 500
-    maxTime = 3.0
-    T1 = 0.0
-    T2star = 0.0
-    parameterToChange = DQDParameters.B_X.value
-    arrayOfParameters = np.arange(0.05, 0.75, 0.05)
-    tlistNano = np.linspace(0, maxTime, totalPoints)
-
-    numCores = min(24, cpu_count())
-    logging.info(f"Using {numCores} cores with joblib.")
-
+def run_repetitive_detuning_protocol(params, parameterToChange, arrayOfParameters, interactionDetuningList,
+                          tlistNano, maxTime, totalPoints, cutOffN, T1, T2star, numCores):
+    """
+    Runs the detuning protocol for each value in arrayOfParameters, returning:
+    symmetryAxes, rabiFreqs_sym, rabiPeriods_sym, listOfDetuningsFound
+    """
     symmetryAxes, rabiFreqs_sym, rabiPeriods_sym, listOfDetuningsFound = [], [], [], []
 
     for idx, value in enumerate(arrayOfParameters):
@@ -167,6 +138,7 @@ if __name__ == "__main__":
 
         symDetuning, rabiFreq, freqsNs = findCentralDetuning(currents, interactionDetuningList, tlistNano)
         sweetIndices, grads = findSweetSpotsFromFreqs(currents, interactionDetuningList, tlistNano)
+
         symmetryAxes.append(symDetuning)
         rabiFreqs_sym.append(rabiFreq)
         rabiPeriods_sym.append(1.0 / rabiFreq)
@@ -174,7 +146,8 @@ if __name__ == "__main__":
 
         logging.info(f"[{idx+1}/{len(arrayOfParameters)}] Param={value:.4f}, CentralDet={symDetuning:.4f}, RabiFreq={rabiFreq:.4f}")
 
-        fig, ax = plotCurrentMap(currents, tlistNano, interactionDetuningList, parameterToChange, value, symDetuning)
+        # Plotting each current map
+        fig, ax = plot_rabi_vs_time(currents, tlistNano, interactionDetuningList, parameterToChange, value, symDetuning)
 
         # --- Save results ---
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -206,37 +179,42 @@ if __name__ == "__main__":
         plt.close(fig)
         sleep(0.1)
 
+    return symmetryAxes, rabiFreqs_sym, rabiPeriods_sym, listOfDetuningsFound
+
+
+
+# ---------------- main ----------------
+if __name__ == "__main__":
+    setupLogger(current_dir)
+    logging.info("Starting dynamics protocol...")
+
+    parameters_file = os.path.join(root_dir, "global_parameters.json")
+    with open(parameters_file, "r") as f:
+        params = json.load(f)
+
+    # --- Simulation parameters ---
+    interactionDetuningList = np.linspace(4.25, 5.25, 500)
+    cutOffN = None
+    totalPoints = 500
+    maxTime = 3.0
+    T1 = 0.0
+    T2star = 0.0
+    parameterToChange = DQDParameters.GV_L.value
+    arrayOfParameters = np.arange(0.5*params[DQDParameters.GS_R.value], 1.5*0.5*params[DQDParameters.GS_R.value], 0.1)
+    tlistNano = np.linspace(0, maxTime, totalPoints)
+    numCores = min(24, cpu_count())
+    logging.info(f"Using {numCores} cores with joblib.")
+
+    # Run the protocol
+    symmetryAxes, rabiFreqs_sym, rabiPeriods_sym, listOfDetuningsFound = run_repetitive_detuning_protocol(
+        params, parameterToChange, arrayOfParameters, interactionDetuningList,
+        tlistNano, maxTime, totalPoints, cutOffN, T1, T2star, numCores
+    )
+
     logging.info("All computations ended.")
 
-
-    # ------------------- Combined final figure -------------------
-    fig, axes = plt.subplots(3, 1, figsize=(8, 12), sharex=True)
-
-    freqsScaled, unit = formatFrequencies(rabiFreqs_sym)
-
-    # Rabi frequency
-    axes[0].plot(arrayOfParameters, freqsScaled, "o-", label="Rabi frequency central detuning")
-    axes[0].set_ylabel(f"Frequency ({unit})")
-    axes[0].set_title(f"Rabi frequency vs {parameterToChange}")
-    axes[0].legend()
-    axes[0].grid(True)
-
-    # Rabi period
-    axes[1].plot(arrayOfParameters, rabiPeriods_sym, "o-", label="Rabi period central detuning")
-    axes[1].set_ylabel("Period (ns)")
-    axes[1].set_title(f"Rabi period vs {parameterToChange}")
-    axes[1].legend()
-    axes[1].grid(True)
-
-    # Central detuning
-    axes[2].plot(arrayOfParameters, symmetryAxes, "o-", label="Central detuning")
-    axes[2].set_xlabel(f"{parameterToChange}")
-    axes[2].set_ylabel("Detuning (meV)")
-    axes[2].set_title(f"Central detuning vs {parameterToChange}")
-    axes[2].legend()
-    axes[2].grid(True)
-
-    plt.tight_layout()
+    # Plot combined final figure
+    fig, axes = plot_combined_rabi_results(arrayOfParameters, rabiFreqs_sym, rabiPeriods_sym, symmetryAxes, parameterToChange)
 
     # --- Save combined figure ---
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
