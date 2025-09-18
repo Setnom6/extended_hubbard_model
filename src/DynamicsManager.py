@@ -52,12 +52,12 @@ class DynamicsManager:
                 return Qobj(H_interp)
 
 
-            result = mesolve(H_t, initial_state, times, collapse_operators, [], 
+            result = mesolve(H_t, initial_state, times, c_ops=collapse_operators, 
                          options={"nsteps": 10000, "atol":1e-7, "rtol": 1e-5, "method": 'bdf'})
             return result
 
         elif unique_hamiltonian is not None:
-            result = mesolve(unique_hamiltonian, initial_state, times, collapse_operators, [], 
+            result = mesolve(unique_hamiltonian, initial_state, times, c_ops=collapse_operators, 
                          options={"nsteps": 10000, "atol":1e-7, "rtol": 1e-5, "method": 'bdf'})
             return result
         else:

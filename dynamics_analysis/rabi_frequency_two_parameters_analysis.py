@@ -12,6 +12,7 @@ import logging
 from joblib import Parallel, delayed, cpu_count
 from copy import deepcopy
 from time import sleep
+from matplotlib.cm import get_cmap
 from scipy.fft import fft, fftfreq
 
 # Add root directory to sys.path so 'src' can be imported
@@ -209,7 +210,7 @@ def plotResults(detuningList, bParallelList, rabiFreqMap, grad_detuning, dominan
     colors = ['red', 'blue', 'green', 'purple']
     
     # Crear colormap modificado para mostrar NaN en gris
-    cmap_rabi = cm.get_cmap('viridis_r').copy()
+    cmap_rabi = get_cmap('viridis_r').copy()
     cmap_rabi.set_bad(color='lightgray')
     
     # 1. Mapa de frecuencias de Rabi
