@@ -200,7 +200,7 @@ if __name__ == "__main__":
     T1 = 0.0
     T2star = 0.0
     parameterToChange = DQDParameters.GV_L.value
-    arrayOfParameters = np.arange(0.5*params[DQDParameters.GS_R.value], 1.5*0.5*params[DQDParameters.GS_R.value], 0.1)
+    arrayOfParameters = np.arange(0.5, 1.5, 0.1)*params[DQDParameters.GV_R.value]
     tlistNano = np.linspace(0, maxTime, totalPoints)
     numCores = min(24, cpu_count())
     logging.info(f"Using {numCores} cores with joblib.")

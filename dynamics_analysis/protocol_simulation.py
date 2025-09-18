@@ -43,27 +43,28 @@ T2star = 0.0  # Dephasing time in ns
 cutOffN = None
 
 # Characteristic values obtained from further analysis
-interactionDetuning = 4.39
-expectedPeriod = 0.5  # ns
+interactionDetuning = 4.3502
+expectedPeriod = 1.48  # ns
 peakDetuningreadOut = dqd.params[DQDParameters.U0.value]
 
 
 # Options for general protocol (comment if one wants simple evolution)
+
 parameterToChange = DQDParameters.E_R.value
 initialStateDict = {}
 slopesShapes = [
     [peakDetuningreadOut, interactionDetuning, 2*expectedPeriod],  # Ramp down
-    [interactionDetuning, interactionDetuning, 1.5*expectedPeriod],  # Ramp up
+    [interactionDetuning, interactionDetuning, 1.25*expectedPeriod],  # Ramp up
     [interactionDetuning, peakDetuningreadOut, 2*expectedPeriod],  # Ramp to phase point
     [peakDetuningreadOut, peakDetuningreadOut, 1*expectedPeriod],  # Phase accumulation
 ]
 
-# Options for simple evolution (uncomment if wanted)
+"""# Options for simple evolution (uncomment if wanted)
 
 parameterToChange = None
 initialStateDict = {DQDParameters.E_R.value: 0.0}
 slopesShapes =[[interactionDetuning, interactionDetuning, 10*expectedPeriod]]
-dqd.updateParams({DQDParameters.E_R.value: interactionDetuning})
+dqd.updateParams({DQDParameters.E_R.value: interactionDetuning})"""
 
 # --- Build protocol ---
 tlistNano, eiValues = dqd.build_protocol_timeline(slopesShapes, totalPoints)

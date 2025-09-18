@@ -106,11 +106,11 @@ def computeRabiFrequencyMap(params):
     setupLogger(current_dir)
 
     cutOffN =None
-    totalPoints = 200
+    totalPoints = 300
     totalDetunings = 200
 
 
-    maxTime = 5.0
+    maxTime = 10.0
     T1 = 0.0
     T2star = 0.0
     
@@ -119,10 +119,10 @@ def computeRabiFrequencyMap(params):
 
     # for bx (change for other parameter)
     eps = 1e-5
-    halfPoints = totalPoints // 2
+    halfPoints = totalDetunings // 2
 
     left = np.linspace(-1.0, -eps, halfPoints, endpoint=True)
-    right = np.linspace(eps, 1.0, totalPoints - halfPoints, endpoint=True)
+    right = np.linspace(eps, 1.0, totalDetunings - halfPoints, endpoint=True)
     bParallelList = np.concatenate((left, right))
 
     timesNs = np.linspace(0, maxTime, totalPoints)
@@ -193,7 +193,7 @@ if __name__ == "__main__":
     with open(parameters_file, "r") as f:
         params = json.load(f)
 
-    params[DQDParameters.GV_L.value] = 0.5*params[DQDParameters.GV_R.value]
+    params[DQDParameters.GV_L.value] = 0.66*params[DQDParameters.GV_R.value]
 
     # Compute 2D map
     detuningList, bParallelList, rabiFreqMap, currentMap, dominanceMap, fixedParameters = computeRabiFrequencyMap(params)

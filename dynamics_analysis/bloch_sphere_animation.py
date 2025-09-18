@@ -36,13 +36,13 @@ dqd = DQD21(params=params)
 
 # --- Protocol definition (example, adapt as needed) ---
 expectedPeriod = 1.5416  # ns
-totalPoints = 200
+totalPoints = 500
 T1 = 0.0  # Spin relaxation time in ns
 T2star = 0.0  # Dephasing time in ns
 cutOffN = None
 
 # Detuning protocol shape (adapt as needed)
-interactionDetuning = 4.7638
+interactionDetuning = 4.3502
 peakDetuningreadOut = dqd.params[DQDParameters.U0.value]
 
 
@@ -82,8 +82,8 @@ logging.info("Dynamics computed. Starting Bloch sphere animation...")
 if cutOffN is None:
     cutOffN = 4
 
-labels = dqd.basesDict[BasesNames.SINGLET_TRIPLET_QUBIT.name]['labels']
-singletIndices, tripletIndices = dqd.get_current_indices(BasesNames.SINGLET_TRIPLET_QUBIT.name, cutOffN)
+labels = dqd.basesDict[BasesNames.SINGLET_TRIPLET_QUBIT_4.name]['labels']
+singletIndices, tripletIndices = dqd.get_current_indices(BasesNames.SINGLET_TRIPLET_QUBIT_4.name, cutOffN)
 
 fig, ani, populations, blochVectors = plot_bloch_sphere(
     result=result,
