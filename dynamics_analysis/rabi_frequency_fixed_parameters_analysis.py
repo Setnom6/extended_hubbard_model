@@ -140,14 +140,14 @@ if __name__ == "__main__":
     with open(parameters_file, "r") as f:
         params = json.load(f)
 
-    interactionDetuningList = np.linspace(4.2, 4.6, 100)
+    interactionDetuningList = np.linspace(4.2, 4.6, 500)
     cutOffN =None
-    totalPoints = 200
-    maxTime = 2
+    totalPoints = 500
+    maxTime = 3.0
     T1 = 0.0
     T2star = 0.0
     parameterToChange = DQDParameters.B_X.value
-    arrayOfParameters = [0.5]
+    arrayOfParameters = np.arange(0.05, 0.75, 0.05)
     tlistNano = np.linspace(0, maxTime, totalPoints)
 
     numCores = min(24, cpu_count())

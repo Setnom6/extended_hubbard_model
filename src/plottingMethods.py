@@ -12,8 +12,8 @@ import os
 import logging
 
 def setupLogger(logDir):
-        os.makedirs(logDir, exist_ok=True)
-        logPath = os.path.join(logDir, "log_results.txt")
+        os.makedirs(os.path.join(logDir, "data"), exist_ok=True)
+        logPath = os.path.join(logDir, "data", "log_results.txt")
 
         logging.basicConfig(
             level=logging.INFO,
