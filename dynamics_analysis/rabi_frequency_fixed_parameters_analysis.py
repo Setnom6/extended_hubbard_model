@@ -21,7 +21,7 @@ if root_dir not in sys.path:
     sys.path.insert(0, root_dir)
 
 from DQD21 import DQD21, DQDParameters, BasesNames
-from src.plottingMethods import setupLogger, plotCurrentMap, plotRabiAndSensitivity
+from src.plottingMethods import setupLogger, plotCurrentMap
 
 
 # ---------------- dynamics ----------------
@@ -175,7 +175,6 @@ if __name__ == "__main__":
         logging.info(f"[{idx+1}/{len(arrayOfParameters)}] Param={value:.4f}, CentralDet={symDetuning:.4f}, RabiFreq={rabiFreq:.4f}")
 
         fig, ax = plotCurrentMap(currents, tlistNano, interactionDetuningList, parameterToChange, value, symDetuning)
-        fig2, _ = plotRabiAndSensitivity(interactionDetuningList, freqsNs, grads, sweetIndices, symDetuning, parameterToChange, value)
 
         # --- Save results ---
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -205,8 +204,46 @@ if __name__ == "__main__":
         print(f"Data saved to: {npz_filename}")
 
         plt.close(fig)
-        plt.close(fig2)
         sleep(0.1)
 
     logging.info("All computations ended.")
-    plt.show()
+
+
+    # ------------------- Combined final figure -------------------
+    fig, axes = plt.subplots(3, 1, figsize=(8, 12), sharex=True)
+
+    freqsScaled, unit = formatFrequencies(rabiFreqs_sym)
+
+    # Rabi frequency
+    axes[0].plot(arrayOfParameters, freqsScaled, "o-", label="Rabi frequency central detuning")
+    axes[0].set_ylabel(f"Frequency ({unit})")
+    axes[0].set_title(f"Rabi frequency vs {parameterToChange}")
+    axes[0].legend()
+    axes[0].grid(True)
+
+    # Rabi period
+    axes[1].plot(arrayOfParameters, rabiPeriods_sym, "o-", label="Rabi period central detuning")
+    axes[1].set_ylabel("Period (ns)")
+    axes[1].set_title(f"Rabi period vs {parameterToChange}")
+    axes[1].legend()
+    axes[1].grid(True)
+
+    # Central detuning
+    axes[2].plot(arrayOfParameters, symmetryAxes, "o-", label="Central detuning")
+    axes[2].set_xlabel(f"{parameterToChange}")
+    axes[2].set_ylabel("Detuning (meV)")
+    axes[2].set_title(f"Central detuning vs {parameterToChange}")
+    axes[2].legend()
+    axes[2].grid(True)
+
+    plt.tight_layout()
+
+    # --- Save combined figure ---
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    figures_dir = os.path.join(current_dir, "figures")
+    os.makedirs(figures_dir, exist_ok=True)
+    combined_fig_filename = os.path.join(figures_dir, f"detuning_protocol_combined_{timestamp}.png")
+    fig.savefig(combined_fig_filename, bbox_inches="tight", dpi=300)
+    plt.close(fig)
+
+    print(f"Combined figure saved to: {combined_fig_filename}")

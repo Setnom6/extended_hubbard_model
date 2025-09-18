@@ -450,29 +450,3 @@ def plotCurrentMap(currents, tlistNano, detuningList, paramName, paramValue, sym
     ax.set_title(f"Current map ({paramName} = {paramValue:.4f})")
     ax.legend()
     return fig, ax
-
-
-def plotRabiAndSensitivity(detuningList, freqsNs, grads, sweetIndices, symDetuning, paramName, paramValue):
-    fig, ax1 = plt.subplots(figsize=(7, 4))
-    ax1.plot(detuningList, freqsNs, "o-", color="tab:blue", label="Rabi freq (1/ns)", markersize=5)
-    ax1.scatter(detuningList[sweetIndices], freqsNs[sweetIndices], c="red", s=5, label="Sweet spots")
-    ax1.axvline(symDetuning, color="green", linestyle="--", label=f"Central detuning: {symDetuning:.4f} meV")
-    ax1.set_xlabel("E_R (meV)")
-    ax1.set_ylabel("Frequency (1/ns)", color="tab:blue")
-    ax1.tick_params(axis="y", labelcolor="tab:blue")
-    ax1.grid(True)
-
-    ax2 = ax1.twinx()
-    ax2.plot(detuningList, np.abs(grads), "o-", color="tab:orange", markersize=5, label="|df/dε|")
-    ax2.scatter(detuningList[sweetIndices], np.abs(grads)[sweetIndices], c="red", s=5)
-    ax2.set_ylabel("|df/dε| (1/ns per meV)", color="tab:orange")
-    ax2.set_yscale("log")
-    ax2.tick_params(axis="y", labelcolor="tab:orange")
-
-    lines_1, labels_1 = ax1.get_legend_handles_labels()
-    lines_2, labels_2 = ax2.get_legend_handles_labels()
-    ax2.legend(lines_1 + lines_2, labels_1 + labels_2, loc="upper right")
-
-    fig.suptitle(f"Rabi frequency and sensitivity ({paramName} = {paramValue:.4f})")
-    fig.tight_layout()
-    return fig, (ax1, ax2)
