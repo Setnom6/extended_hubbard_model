@@ -36,25 +36,26 @@ dqd = DQD21(params=params)
 
 # --- Protocol definition (example, adapt as needed) ---
 
-totalPoints = 500
+totalPoints = 3000
 T1 = 0.0  # Spin relaxation time in ns
 T2star = 0.0  # Dephasing time in ns
 cutOffN = None
 
 # Detuning protocol shape (adapt as needed)
 interactionDetuning = 3.6102
-expectedPeriod = 11.41  # ns
+expectedPeriod = 11.0  # ns
 peakDetuningreadOut = dqd.params[DQDParameters.U0.value]
 
 
 slopesShapes = [
-    [peakDetuningreadOut, interactionDetuning, 2*expectedPeriod],  # Ramp down
-    [interactionDetuning, interactionDetuning, 1.25*expectedPeriod],  # Ramp up
-    [interactionDetuning, peakDetuningreadOut, 1.0*expectedPeriod],
-    [peakDetuningreadOut, peakDetuningreadOut, 1.0*expectedPeriod],
-    [peakDetuningreadOut, interactionDetuning, 1.75*expectedPeriod],
-    [interactionDetuning, peakDetuningreadOut, 2*expectedPeriod],  # Ramp to phase point
-    [peakDetuningreadOut, peakDetuningreadOut, 1*expectedPeriod],  # Phase accumulation
+    [peakDetuningreadOut, interactionDetuning, 1*expectedPeriod], 
+    [interactionDetuning, interactionDetuning, 1.25*expectedPeriod],
+    [interactionDetuning, 0.0, 1.0*expectedPeriod],
+    [0.0, 0.0, 1.0*expectedPeriod],
+    [0.0, interactionDetuning, 1.0*expectedPeriod],
+    [interactionDetuning, interactionDetuning, 1.75*expectedPeriod],
+    [interactionDetuning, peakDetuningreadOut, 1*expectedPeriod],  
+    [peakDetuningreadOut, peakDetuningreadOut, 1*expectedPeriod], 
 ]
 
 
@@ -96,8 +97,6 @@ fig, ani, populations, blochVectors = plot_bloch_sphere(
     iSym=singletIndices,
     iAnti=tripletIndices,
     sweepValues=eiValues,
-    actualDetuning=eiValues,
-    detThreshold=1.05*interactionDetuning,
     cutOffN=cutOffN
 )
 

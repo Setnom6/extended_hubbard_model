@@ -300,8 +300,10 @@ def plot_protocol_results(result, cutoffN, labels, sweepvalues, subspace0Indices
 
     return fig, (ax1, ax2, ax3), populations
 
+
 def rhoToBlochHybrid(rhoFull, iSym, iAnti, detuning=None, detThreshold=None, sRep=None, tRep=None):
-    """Compute Bloch vector (sx, sy, sz) for ST qubit given full density matrix and symmetry indices."""
+    """Compute Bloch vector (sx, sy, sz) for ST qubit given full density matrix and symmetry indices.
+    This is likely to be deleted as is not working properly"""
     rho = Qobj(np.asarray(rhoFull, dtype=complex)) if not isinstance(rhoFull, Qobj) else rhoFull
 
     # Dynamics choice of representative for the singlet (1,1 or 2,0 representative based on detuning)
@@ -339,8 +341,41 @@ def rhoToBlochHybrid(rhoFull, iSym, iAnti, detuning=None, detThreshold=None, sRe
 
     return np.array([sx, sy, sz], dtype=float)
 
+def rhoToBlochHybridCanonical(rhoFull, iSym, iAnti):
+    """
+    Compute Bloch vector (sx, sy, sz) for a pure state density matrix.
+    iSym = indices for subspace A
+    iAnti = indices for subspace B
+    """
+    rho = Qobj(np.asarray(rhoFull, dtype=complex)) if not isinstance(rhoFull, Qobj) else rhoFull
 
-def plot_bloch_sphere(result: Result, tlist, labels, iSym, iAnti, sweepValues, actualDetuning, detThreshold=None,
+    # Obtain state vector assuming is pure
+    evals, evecs = rho.eigenstates()
+    idx = np.argmax(np.real(evals)) 
+    psi = evecs[idx].full().flatten()
+
+    # Project onto qubit subspaces A (symmetric) and B (antisymmetric)
+    psiA = psi[iSym]
+    psiB = psi[iAnti]
+
+    normA = np.linalg.norm(psiA)
+    normB = np.linalg.norm(psiB)
+
+    if normA < 1e-14 and normB < 1e-14:
+        return np.array([0.0, 0.0, 0.0])
+
+    # Obtain coherences between subspaces
+    coh = np.vdot(psiA, psiB)  # <psiA|psiB>
+
+    # Bloch vector
+    sx = 2 * coh.real
+    sy = 2 * coh.imag
+    sz = normA**2 - normB**2
+
+    return np.array([sx, sy, sz], dtype=float)
+
+
+def plot_bloch_sphere(result: Result, tlist, labels, iSym, iAnti, sweepValues,
                       cutOffN=None, nFrames=300, fps=25):
     """
     Create animation of ST qubit Bloch vector and population dynamics.
@@ -348,15 +383,13 @@ def plot_bloch_sphere(result: Result, tlist, labels, iSym, iAnti, sweepValues, a
     Returns:
         fig, ani, populations, blochVectors
     """
-    if isinstance(actualDetuning, float):
-        actualDetuning = [actualDetuning for _ in range(len(sweepValues))]
 
     states = result.states if hasattr(result, "states") else result
     populations = np.array([state.diag() for state in states])
 
     # Precompute Bloch vectors
     blochVectors = np.array([
-        rhoToBlochHybrid(rho, iSym, iAnti, detuning=actualDetuning[k], detThreshold=detThreshold)
+        rhoToBlochHybridCanonical(rho, iSym, iAnti)
         for k, rho in enumerate(states)
     ])
 

@@ -44,7 +44,7 @@ cutOffN = None
 
 # Characteristic values obtained from further analysis
 interactionDetuning = 3.6102
-expectedPeriod = 11.41  # ns
+expectedPeriod = 11.0  # ns
 peakDetuningreadOut = dqd.params[DQDParameters.U0.value]
 
 
@@ -54,7 +54,7 @@ parameterToChange = DQDParameters.E_R.value
 initialStateDict = {}
 slopesShapes = [
     [peakDetuningreadOut, interactionDetuning, 2*expectedPeriod],  # Ramp down
-    [interactionDetuning, interactionDetuning, 1.25*expectedPeriod],  # Ramp up
+    [interactionDetuning, interactionDetuning, 1.45*expectedPeriod],  # Ramp up
     [interactionDetuning, peakDetuningreadOut, 2*expectedPeriod],  # Ramp to phase point
     [peakDetuningreadOut, peakDetuningreadOut, 1*expectedPeriod],  # Phase accumulation
 ]
