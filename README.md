@@ -6,7 +6,7 @@ This repository is intended to provied a set of tools to create and manipulate p
     \hat{H} = \sum_{j,k=1}^{N} t_{jk} c_{j}^{\dagger}c_k + \frac{1}{2} \sum_{h,j,k,l} U_{h,j,k,l} c_k^\dagger c_j^\dagger c_k c_m,
 ```
 
-where $N$ is the number of single-particle states. $t_{jk} = < j|\hat{H}_0 |k>$ is obtained from the single-particle $N\times N$ hamiltonian and $U_{hjkm}=< hj |\hat{H}_C|km>$ captures the pairwise particle-particle interactions.
+where $N$ is the number of single-particle states. $t_{jk}=<j|H_C |k>$ is obtained from the single-particle $NxN$ hamiltonian and $U_{hjkm}=< hj |H_C |km>$ captures the pairwise particle-particle interactions.
 
 The main class which allows for creating this kind of Hamiltonians is ```ManyBodyHamiltonian```. To initialize it one has to provide the number of single-particle states (or orbitals) ```norb```, the number of fermionic particles which will be considered ```n_elec``` (note that more than 2 particles can be included but only up to particle-particle interactions can be modelled), a dictionary with the single-particle terms ```hdict``` and a dictionary with the particle-particle terms ```cdict```. 
 
