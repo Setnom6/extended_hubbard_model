@@ -183,11 +183,12 @@ class ManyBodyHamiltonian:
         Generates the Coulomb tensor in the two-electron integral format from a given
         two-body dictionary representation. The resulting tensor includes both the
         provided integrals and their Hermitian counterparts by ensuring Hermitian
-        symmetry.
+        symmetry. 
 
         :param cdict: Dictionary representation of two-body integrals. The keys are
             tuples of orbital indices (p, r, q, s), and the values are the corresponding
-            complex integral values.
+            complex integral values. The dict have to fulfill the convention r>p, q>s
+            to avoid over sumation in the production of the Hamiltonian afterwards.
         :type cdict: TwoBodyDict
         :param norb: Total number of orbitals. Determines the size of the resulting
             Coulomb tensor.
@@ -203,7 +204,6 @@ class ManyBodyHamiltonian:
             V[p, r, q, s] = val
             V[q, s, p, r] = np.conjugate(val)
         return V
-
 
     def add_basis(self, basis_name: str, labels: List[str], activations_dict: Dict[str, Dict[str, List]]) -> None:
         """

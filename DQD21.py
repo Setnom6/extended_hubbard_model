@@ -313,11 +313,14 @@ class DQD21(ManyBodyHamiltonian, DynamicsManager):
 
         return h
     
-
+    
     def _build_interaction_dict(self):
         """
         Constructs the interaction Hamiltonian dictionary for the double quantum dot system.
         Is uses the ordering in the basis given by the many body Hamiltonian.
+
+        The terms (h,j,k,m) only fulfills j>h as some processes (direct vs exchange) make the difference between k>m and m>k 
+        Some possible ill-defined terms are commented below
         """
 
         U0 = self.params[DQDParameters.U0.value]
@@ -331,79 +334,81 @@ class DQD21(ManyBodyHamiltonian, DynamicsManager):
         g_z0 = self.params[DQDParameters.G_Z0.value]
         g_0z = self.params[DQDParameters.G_0Z.value]
 
-        
-        V = {
-        (0, 1, 1, 0): U0 + J*(g_zz + g_z0 + g_0z),
-        (2, 3, 3, 2): U0 + J*(g_zz + g_z0 + g_0z),
-        (0, 2, 2, 0): U0 + J*(g_zz - g_z0 - g_0z),
-        (0, 3, 3, 0): U0 + J*(g_zz - g_z0 - g_0z),
-        (1, 2, 2, 1): U0 + J*(g_zz - g_z0 - g_0z),
-        (1, 3, 3, 1): U0 + J*(g_zz - g_z0 - g_0z),
-        (0, 2, 0, 2): 4*J*g_ortho,
-        (0, 3, 1, 2): 4*J*g_ortho,
-        (1, 3, 1, 3): 4*J*g_ortho,
-        (1, 2, 0, 3): 4*J*g_ortho,
-        (4, 5, 5, 4): U0 + J*(g_zz + g_z0 + g_0z),
-        (6, 7, 7, 6): U0 + J*(g_zz + g_z0 + g_0z),
-        (4, 6, 6, 4): U0 + J*(g_zz - g_z0 - g_0z),
-        (4, 7, 7, 4): U0 + J*(g_zz - g_z0 - g_0z),
-        (5, 6, 6, 5): U0 + J*(g_zz - g_z0 - g_0z),
-        (5, 7, 7, 5): U0 + J*(g_zz - g_z0 - g_0z),
-        (4, 6, 4, 6): 4 * J * g_ortho,
-        (4, 7, 5, 6): 4 * J * g_ortho,
-        (5, 7, 5, 7): 4 * J * g_ortho,
-        (5, 6, 4, 7): 4 * J * g_ortho,
-        (0, 4, 4, 0): U1,
-        (0, 5, 5, 0): U1,
-        (0, 6, 6, 0): U1,
-        (0, 7, 7, 0): U1,
-        (1, 4, 4, 1): U1,
-        (1, 5, 5, 1): U1,
-        (1, 6, 6, 1): U1,
-        (1, 7, 7, 1): U1,
-        (2, 4, 4, 2): U1,
-        (2, 5, 5, 2): U1,
-        (2, 6, 6, 2): U1,
-        (2, 7, 7, 2): U1,
-        (3, 4, 4, 3): U1,
-        (3, 5, 5, 3): U1,
-        (3, 6, 6, 3): U1,
-        (3, 7, 7, 3): U1,
-        (0, 1, 5, 4): P,
-        (0, 2, 6, 4): P,
-        (0, 3, 7, 4): P,
-        (1, 2, 6, 5): P,
-        (1, 3, 7, 5): P,
-        (2, 3, 7, 6): P,}
+        V = {}
 
-        densityAssistedEntries = [
-            (1, 2, 6, 1),
-            (1, 3, 7, 1),
-            (2, 3, 7, 2),
-            (1, 6, 2, 1),
-            (0, 1, 5, 0),
-            (0, 2, 6, 0),
-            (0, 3, 7, 0),
-            (0, 5, 1, 0),
-            (0, 6, 2, 0),
-            (0, 7, 3, 0),
-            (1, 4, 0, 1),
-            (1, 7, 3, 1),
-            (2, 7, 3, 2),
-            (2, 4, 0, 2),
-            (2, 5, 1, 2),
-            (3, 4, 0, 3),
-            (3, 6, 2, 3),
-            (3, 5, 1, 3),
+        # Intra dot coulomb terms
+        coulomb_intradot_intravalley = [
+            (0, 1, 1, 0), (2, 3, 3, 2),
+            (4, 5, 5, 4), (6, 7, 7, 6),
         ]
 
-        for (i, j, k, l) in densityAssistedEntries:
-            V[(i, j, k, l)] = A
+        for (h,j,k,m) in coulomb_intradot_intravalley:
+            V[(h,j,k,m)] =  U0 + J*(g_zz + g_z0 + g_0z)
 
-        exchange_pairs = [(0, 4), (1, 5), (2, 6), (3, 7)]
-        for (r, l) in exchange_pairs:
-            if (r, l) < (l, r):
-                V[(r, l, r, l)] = X
+        coulomb_intradot_intervalley = [
+            (0, 2, 2, 0), (0, 3, 3, 0), (1, 2, 2, 1), (1, 3, 3, 1),
+            (4, 6, 6, 4), (4, 7, 7, 4), (5, 6, 6, 5), (5, 7, 7, 5)
+        ]
+
+        for (h,j,k,m) in coulomb_intradot_intervalley:
+            V[(h,j,k,m)] =  U0 + J*(g_zz - g_z0 - g_0z)
+
+        ortho_exchanges = [
+            (0, 2, 0, 2), (0, 3, 1, 2), (1, 3, 1, 3), (1, 2, 0, 3), # (0,3,1,2) and (1,2,0,3) correspond to the same entry as they are complex conjugates
+            # Should they be (0,3,1,2) and (0,3,2,1)? With the same sign?
+            (4, 6, 4, 6), (4, 7, 5, 6), (5, 7, 5, 7), (5, 6, 4, 7), # Same for right dot as it is a copy of the left one
+        ]
+
+        for (h,j,k,m) in ortho_exchanges:
+            V[(h,j,k,m)] =  4*J*g_ortho
+
+        # Interdot coulomb terms
+        interdot_coulomb = [
+            (0, 4, 4, 0), (0, 5, 5, 0), (0, 6, 6, 0), (0, 7, 7, 0),
+            (1, 4, 4, 1), (1, 5, 5, 1), (1, 6, 6, 1), (1, 7, 7, 1),
+            (2, 4, 4, 2), (2, 5, 5, 2), (2, 6, 6, 2), (2, 7, 7, 2),
+            (3, 4, 4, 3), (3, 5, 5, 3), (3, 6, 6, 3), (3, 7, 7, 3)
+        ]
+        for (h,j,k,m) in interdot_coulomb:
+            V[(h,j,k,m)] =  U1
+
+        # Exhange terms
+        exchange = [
+            (0, 4, 0, 4), (1, 5, 1, 5), (2, 6, 2, 6), (3, 7, 3, 7)
+        ]
+        for (h,j,k,m) in exchange:
+            V[(h,j,k,m)] =  X
+
+        # Assisted hopping terms
+        # All the terms respect the convention h<j
+        # Added term for an electron staying in the right dot maintaining the convention
+        # As assisted hopping is a critical parameter for the anticrossing, we have to be sure of its terms
+        # For example: does it make sense that the amplitude of the term (A) is the same if: 
+        # 1) the two electrons start in the same dot and one of them tunnel to the other
+        # 2) each electron is in one dot and one of them tunnel to the other, occupying the same dot
+
+        densityAssistedEntries = [
+            (0, 1, 5, 0), (0, 2, 6, 0), (0, 3, 7, 0), (0, 5, 1, 0), (0, 6, 2, 0), (0, 7, 3, 0),
+            (1, 2, 6, 1), (1, 3, 7, 1), (1, 4, 0, 1), (1, 6, 2, 1), (1, 7, 3, 1), 
+            (2, 3, 7, 2), (2, 4, 0, 2), (2, 5, 1, 2), (2, 7, 3, 2), 
+            (3, 4, 0, 3), (3, 5, 1, 3), (3, 6, 2, 3),
+            (4, 5, 1, 4), (4, 6, 2, 4), (4, 7, 3, 4),
+            (5, 6, 2, 5), (5, 7, 3, 5),
+            (6, 7, 3, 6)
+        ]
+
+        for (h,j,k,m) in densityAssistedEntries:
+            V[(h,j,k,m)] =  A
+
+        # Pair hopping terms
+        # As k>m (in h,j,k,m) is not required anymore, should terms like (0, 1, 4, 5) be included?
+
+        pair_hopping = [
+            (0, 1, 5, 4), (0, 2, 6, 4), (0, 3, 7, 4),
+            (1, 2, 6, 5), (1, 3, 7, 5), (2, 3, 7, 6)
+        ]
+        for (h,j,k,m) in pair_hopping:
+            V[(h,j,k,m)] =  P
 
         return V
 

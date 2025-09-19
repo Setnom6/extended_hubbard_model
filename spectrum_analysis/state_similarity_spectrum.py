@@ -36,7 +36,7 @@ dqd = DQD21(params=params)
 
 # Define the parameter to sweep and its values
 parameter_name = DQDParameters.E_R.value  # Example: detuning parameter
-x_values = np.linspace(3.0, 5.0, 1000)
+x_values = np.linspace(0.0, 8.0, 1000)
 results_list = []
 
 for val in x_values:

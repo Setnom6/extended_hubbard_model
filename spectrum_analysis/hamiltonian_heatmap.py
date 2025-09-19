@@ -35,8 +35,8 @@ with open(parameters_file, 'r') as f:
 # Create DQD system and obtain Hamiltonian in the desired basis
 dqd = DQD21(params=params)
 
-HProjected = dqd.getHamiltonianInBase(dqd.basesNames[BasesNames.SINGLET_TRIPLET_QUBIT_4.value])
-sector_sizes = dqd.basesSectors[BasesNames.SINGLET_TRIPLET_QUBIT_4.value]
+HProjected = dqd.getHamiltonianInBase(dqd.basesNames[BasesNames.SINGLET_TRIPLET.value])
+sector_sizes = dqd.basesSectors[BasesNames.SINGLET_TRIPLET.value]
 
 # Plot hamiltonian heatmap with sector sizes and labels
 fig, ax = plot_hamiltonian_heatmap(
