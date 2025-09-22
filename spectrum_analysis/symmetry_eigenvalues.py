@@ -27,7 +27,7 @@ setupLogger(current_dir)
 logging.info("Computing spectrum with symmetry coloring...")
 
 # Load parameters
-parameters_file = os.path.join(current_dir, 'global_parameters.json')
+parameters_file = os.path.join(root_dir, 'global_parameters.json')
 with open(parameters_file, 'r') as f:
     params = json.load(f)
 
@@ -65,7 +65,7 @@ data_dir = os.path.join(current_dir, "data")
 os.makedirs(figures_dir, exist_ok=True)
 os.makedirs(data_dir, exist_ok=True)
 
-fig_filename = os.path.join(root_dir, f"symmetry_eigenvalues_{timestamp}.png")
+fig_filename = os.path.join(figures_dir, f"symmetry_eigenvalues_{timestamp}.png")
 fig.savefig(fig_filename, bbox_inches='tight', dpi=300)
 
 params_filename = os.path.join(data_dir, f"symmetry_eigenvalues_params_{timestamp}.json")

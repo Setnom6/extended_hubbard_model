@@ -24,8 +24,8 @@ parameters_file = os.path.join(root_dir, 'global_parameters.json')
 with open(parameters_file, 'r') as f:
     params = json.load(f)
 
-parameterToIter = DQDParameters.A.value
-values = np.linspace(0.0, 0.5, 30)
+parameterToIter = DQDParameters.B_X.value
+values = np.linspace(0.0, 2.0, 30)
 
 for value in values:
 
@@ -35,7 +35,7 @@ for value in values:
 
     # Define the parameter to sweep and its values
     parameter_name = DQDParameters.E_R.value  # Example: detuning parameter
-    x_values = np.linspace(3.0, 5.0, 1000)
+    x_values = np.linspace(4.0, 5.0, 1000)
     results_list = []
 
     for val in x_values:
@@ -51,14 +51,14 @@ for value in values:
         x_values=x_values,
         mbh=dqd,
         basis_name=basis_name,
-        max_eigenvalues=5,
+        max_eigenvalues=12,
         figsize=(8, 6),
         scatter_kwargs={'s': 2},
         color_palette_name='tab20'
     )
 
     ax.set_title(f"{parameterToIter} = {value:.3f}")
-    ax.set_ylim(-0.75,0.0)
+    ax.set_ylim(-0.75, -0.25)
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     figures_dir = os.path.join(current_dir, "figures", "iteration")

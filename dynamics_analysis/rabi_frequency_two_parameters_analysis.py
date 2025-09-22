@@ -106,8 +106,8 @@ def computeRabiFrequencyMap(params):
     setupLogger(current_dir)
 
     cutOffN =None
-    totalPoints = 300
-    totalDetunings = 200
+    totalPoints = 500
+    totalDetunings = 300
 
 
     maxTime = 10.0
@@ -193,7 +193,7 @@ if __name__ == "__main__":
     with open(parameters_file, "r") as f:
         params = json.load(f)
 
-    params[DQDParameters.GV_L.value] = 0.66*params[DQDParameters.GV_R.value]
+    params[DQDParameters.GV_L.value] = 0.5*params[DQDParameters.GV_R.value]
 
     # Compute 2D map
     detuningList, bParallelList, rabiFreqMap, currentMap, dominanceMap, fixedParameters = computeRabiFrequencyMap(params)

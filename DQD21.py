@@ -313,7 +313,6 @@ class DQD21(ManyBodyHamiltonian, DynamicsManager):
 
         return h
     
-    
     def _build_interaction_dict(self):
         """
         Constructs the interaction Hamiltonian dictionary for the double quantum dot system.
@@ -418,7 +417,10 @@ class DQD21(ManyBodyHamiltonian, DynamicsManager):
         If parameterToChange and newValue are provided, update the parameter before calculation.
         """
 
-        self.updateParams({parameterToChange: newValue})
+        if parameterToChange is not None:
+            if newValue is None:
+                raise ValueError("Parameter to change introduced with no new value.")
+            self.updateParams({parameterToChange: newValue})
         return ManyBodyHamiltonian.calculate_eigenvalues_and_eigenvectors(self)
 
 
