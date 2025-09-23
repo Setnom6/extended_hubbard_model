@@ -214,7 +214,7 @@ if __name__ == "__main__":
     fig_filename = os.path.join(figures_dir, f"rabi_frequency_analysis_{timestamp}.png")
     fig.savefig(fig_filename, bbox_inches="tight", dpi=300)
 
-    paramsFilename = os.path.join(data_dir, f"detuning_protocol_params_{timestamp}.json")
+    paramsFilename = os.path.join(data_dir, f"rabi_frequency_analysis_params_{timestamp}.json")
     with open(paramsFilename, "w") as f:
             json.dump(fixedParameters, f, indent=4)
 

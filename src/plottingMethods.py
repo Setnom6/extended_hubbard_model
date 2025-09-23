@@ -341,6 +341,48 @@ def rhoToBlochHybrid(rhoFull, iSym, iAnti, detuning=None, detThreshold=None, sRe
 
     return np.array([sx, sy, sz], dtype=float)
 
+def rhoToBlochSpannedSubspaces(rhoFull, iSym, iAnti):
+    """
+    Compute the Bloch vector (sx, sy, sz) for a density matrix projected
+    onto a logical qubit defined by:
+      |0> = span of iSym (symmetric)
+      |1> = span of iAnti (antisymmetric)
+    
+    Works for pure or mixed states.
+
+    Returns: (sx, sy, sz) in the Bloch sphere, magnitude <= 1
+    """
+    # Convert to Qobj if needed
+    rho = Qobj(np.asarray(rhoFull, dtype=complex)) if not isinstance(rhoFull, Qobj) else rhoFull
+
+    # Project density onto logical qubit subspaces
+    P0 = np.zeros(rho.shape, dtype=complex)
+    P1 = np.zeros(rho.shape, dtype=complex)
+    P0[np.ix_(iSym, iSym)] = 1.0
+    P1[np.ix_(iAnti, iAnti)] = 1.0
+
+    # Populations
+    p0 = np.trace(P0 @ rho)
+    p1 = np.trace(P1 @ rho)
+
+    # Coherences
+    coh = np.trace(P0 @ rho @ P1)
+
+    # Build Bloch vector
+    sx = 2 * coh.real
+    sy = 2 * coh.imag
+    sz = p0 - p1
+
+    # Magnitude of Bloch vector <= 1 (purity in subspace)
+    norm = np.sqrt(sx**2 + sy**2 + sz**2)
+    if norm > 1.0:
+        sx /= norm
+        sy /= norm
+        sz /= norm
+
+    return np.array([sx, sy, sz], dtype=float)
+
+
 def rhoToBlochHybridCanonical(rhoFull, iSym, iAnti):
     """
     Compute Bloch vector (sx, sy, sz) for a pure state density matrix.
@@ -389,7 +431,7 @@ def plot_bloch_sphere(result: Result, tlist, labels, iSym, iAnti, sweepValues,
 
     # Precompute Bloch vectors
     blochVectors = np.array([
-        rhoToBlochHybridCanonical(rho, iSym, iAnti)
+        rhoToBlochSpannedSubspaces(rho, iSym, iAnti)
         for k, rho in enumerate(states)
     ])
 

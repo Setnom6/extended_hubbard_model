@@ -110,7 +110,7 @@ os.makedirs(data_dir, exist_ok=True)
 mp4_filename = os.path.join(figures_dir, f"st_qubit_{timestamp}.mp4")
 ani.save(mp4_filename.replace(".mp4", ".gif"), writer=PillowWriter(fps=25))
 
-params_filename = os.path.join(data_dir, f"detuning_protocol_params_{timestamp}.json")
+params_filename = os.path.join(data_dir, f"st_qubit_params_{timestamp}.json")
 with open(params_filename, "w") as f:
     json.dump(getattr(dqd, "params", params), f, indent=4)
 
