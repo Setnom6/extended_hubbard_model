@@ -83,7 +83,6 @@ def run_repetitive_detuning_protocol(params, interactionDetuning, expectedPeriod
 
     # Plotting each current map
     fig, axes = phaseVsTime(currents, tlistNano, plateauDetuningList)
-    fig.suptitle(f"Final Population and corresponding phase (Total time for slopes: {2*expectedPeriod})")
 
     # --- Save results ---
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -95,6 +94,10 @@ def run_repetitive_detuning_protocol(params, interactionDetuning, expectedPeriod
     fig_filename = os.path.join(figures_dir, f"phase_frequency_fixed_cutoff_{cutOffN if cutOffN is not None else "SWT"}_{timestamp}.png")
     fig.savefig(fig_filename, bbox_inches="tight", dpi=300)
 
+    params["coherentPeriod"] = expectedPeriod
+    params["interactionDetuning"] = interactionDetuning
+    params["slopesTotalTime"] = 2*expectedPeriod
+    params["plateauDetuningList"] = plateauDetuningList 
     paramsFilename = os.path.join(data_dir, f"phase_frequency_fixed_params_cutoff_{cutOffN if cutOffN is not None else "SWT"}_{timestamp}.json")
     with open(paramsFilename, "w") as f:
             json.dump(params, f, indent=4)
@@ -127,26 +130,33 @@ if __name__ == "__main__":
     with open(parameters_file, "r") as f:
         params = json.load(f)
 
-    # --- Simulation parameters ---
-    interactionDetuning = 4.4954
-    expectedPeriod = 1.0/0.6093 
-    plateauDetuningList =[0.5*interactionDetuning]
-    cutOffN = None
-    totalPoints = 2000
-    totalTimes = 50
-    maxTime = 2.0*expectedPeriod
-    T1 = 0.0
-    T2star = 0.0
-    tlistNano = np.linspace(0, maxTime, totalTimes)
-    numCores = min(24, cpu_count())
-    logging.info(f"Using {numCores} cores with joblib.")
+    gvLlist = [11.0, 14.66, 22.0, 33.0, 44.0]
 
-    
+    for i, gvL in enumerate(gvLlist):
 
-    # Run the protocol
-    run_repetitive_detuning_protocol(
-        params, interactionDetuning, expectedPeriod, plateauDetuningList,
-        tlistNano, totalPoints, cutOffN, T1, T2star, numCores
-    )
+        params[DQDParameters.GV_L.value] = gvL
+        # --- Simulation parameters ---
+        interactionDetuning = - 0.043397*gvL + 5.4498 # Obtained numerically
+        expectedPeriod = 1.0/0.6098 
+        plateauDetuningList =[0.5*interactionDetuning]
+        cutOffN = None
+        totalPoints = 2000
+        totalTimes = 50
+        maxTime = 2.0*expectedPeriod
+        T1 = 0.0
+        T2star = 0.0
+        tlistNano = np.linspace(0, maxTime, totalTimes)
+        numCores = min(24, cpu_count())
+        logging.info(f"Using {numCores} cores with joblib.")
+
+        
+
+        # Run the protocol
+        run_repetitive_detuning_protocol(
+            params, interactionDetuning, expectedPeriod, plateauDetuningList,
+            tlistNano, totalPoints, cutOffN, T1, T2star, numCores
+        )
+
+        logging.info(f"Simulation {i+1} of {len(gvLlist)} completed.")
 
     logging.info("All computations ended.")

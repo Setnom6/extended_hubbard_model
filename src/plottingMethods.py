@@ -498,20 +498,19 @@ def phaseVsTime(currents, tlistNano, detuningList):
     for i, detuning in enumerate(detuningList):
         axCurr.plot(
             tlistNano,
-            currents[i, :],
-            label=f"Δ = {detuning:.4f} meV"
+            currents[i, :]
         )
     axCurr.set_ylabel("I (no Pauli Blockade)")
-    axCurr.legend(bbox_to_anchor=(1.05, 1), loc="upper left")
+    axCurr.set_title("Final population after Ramsey protocol")
     
     for i, detuning in enumerate(detuningList):
         axPhi.plot(
             tlistNano,
-            phis[i, :],
-            label=f"Δ = {detuning:.4f} meV"
+            phis[i, :]
         )
     axPhi.set_xlabel("Plateau (ns)")
     axPhi.set_ylabel("Phase φ (deg)")
+    axPhi.set_title("Computed phase angle")
     
     fig.tight_layout()
     axCurr.grid()

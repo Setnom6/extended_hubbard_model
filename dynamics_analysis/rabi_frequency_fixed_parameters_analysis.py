@@ -193,7 +193,7 @@ if __name__ == "__main__":
         params = json.load(f)
 
     # --- Simulation parameters ---
-    interactionDetuningList = np.linspace(4.3, 4.8, 500)
+    interactionDetuningList = np.linspace(3.8, 4.25, 500)
     cutOffN = None
     totalPoints = 2000
     maxTime = 7.5
