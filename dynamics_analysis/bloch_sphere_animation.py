@@ -36,26 +36,29 @@ dqd = DQD21(params=params)
 
 # --- Protocol definition (example, adapt as needed) ---
 
-totalPoints = 3000
+totalPoints = 2000
 T1 = 0.0  # Spin relaxation time in ns
 T2star = 0.0  # Dephasing time in ns
-cutOffN = None
+cutOffN = 10
 
 # Detuning protocol shape (adapt as needed)
-interactionDetuning = 3.6102
-expectedPeriod = 11.0  # ns
-peakDetuningreadOut = dqd.params[DQDParameters.U0.value]
+interactionDetuning = 4.4954
+expectedPeriod = 1.0/0.6093  # ns
+peakDetuningreadOut = 2.0*interactionDetuning
+loweDetuning = 0.5*interactionDetuning
 
 
+parameterToChange = DQDParameters.E_R.value
+initialStateDict = {}
 slopesShapes = [
-    [peakDetuningreadOut, interactionDetuning, 1*expectedPeriod], 
-    [interactionDetuning, interactionDetuning, 1.25*expectedPeriod],
-    [interactionDetuning, 0.0, 1.0*expectedPeriod],
-    [0.0, 0.0, 1.0*expectedPeriod],
-    [0.0, interactionDetuning, 1.0*expectedPeriod],
-    [interactionDetuning, interactionDetuning, 1.75*expectedPeriod],
-    [interactionDetuning, peakDetuningreadOut, 1*expectedPeriod],  
-    [peakDetuningreadOut, peakDetuningreadOut, 1*expectedPeriod], 
+    [peakDetuningreadOut, interactionDetuning, 2*expectedPeriod],  
+    [interactionDetuning, interactionDetuning, 1.25*expectedPeriod],  
+    [interactionDetuning, loweDetuning, 1.0*expectedPeriod], 
+    [loweDetuning, loweDetuning, 1.0*expectedPeriod], 
+    [loweDetuning, interactionDetuning, 1.0*expectedPeriod],
+    [interactionDetuning, interactionDetuning, 1.75*expectedPeriod],  
+    [interactionDetuning, peakDetuningreadOut, 2.0*expectedPeriod],
+    [peakDetuningreadOut, peakDetuningreadOut, 1*expectedPeriod],  
 ]
 
 
@@ -107,14 +110,14 @@ data_dir = os.path.join(current_dir, "data")
 os.makedirs(figures_dir, exist_ok=True)
 os.makedirs(data_dir, exist_ok=True)
 
-mp4_filename = os.path.join(figures_dir, f"st_qubit_{timestamp}.mp4")
+mp4_filename = os.path.join(figures_dir, f"st_qubit_cutoff_{cutOffN if cutOffN is not None else "SWT"}_{timestamp}.mp4")
 ani.save(mp4_filename.replace(".mp4", ".gif"), writer=PillowWriter(fps=25))
 
-params_filename = os.path.join(data_dir, f"st_qubit_params_{timestamp}.json")
+params_filename = os.path.join(data_dir, f"st_qubit_params_cutoff_{cutOffN if cutOffN is not None else "SWT"}_{timestamp}.json")
 with open(params_filename, "w") as f:
     json.dump(getattr(dqd, "params", params), f, indent=4)
 
-npz_filename = os.path.join(data_dir, f"st_qubit_data_{timestamp}.npz")
+npz_filename = os.path.join(data_dir, f"st_qubit_data_cutoff_{cutOffN if cutOffN is not None else "SWT"}_{timestamp}.npz")
 np.savez(
     npz_filename,
     tlistNano=tlistNano,

@@ -341,46 +341,6 @@ def rhoToBlochHybrid(rhoFull, iSym, iAnti, detuning=None, detThreshold=None, sRe
 
     return np.array([sx, sy, sz], dtype=float)
 
-def rhoToBlochSpannedSubspaces(rhoFull, iSym, iAnti):
-    """
-    Compute the Bloch vector (sx, sy, sz) for a density matrix projected
-    onto a logical qubit defined by:
-      |0> = span of iSym (symmetric)
-      |1> = span of iAnti (antisymmetric)
-    
-    Works for pure or mixed states.
-
-    Returns: (sx, sy, sz) in the Bloch sphere, magnitude <= 1
-    """
-    # Convert to Qobj if needed
-    rho = Qobj(np.asarray(rhoFull, dtype=complex)) if not isinstance(rhoFull, Qobj) else rhoFull
-
-    # Project density onto logical qubit subspaces
-    P0 = np.zeros(rho.shape, dtype=complex)
-    P1 = np.zeros(rho.shape, dtype=complex)
-    P0[np.ix_(iSym, iSym)] = 1.0
-    P1[np.ix_(iAnti, iAnti)] = 1.0
-
-    # Populations
-    p0 = np.trace(P0 @ rho)
-    p1 = np.trace(P1 @ rho)
-
-    # Coherences
-    coh = np.trace(P0 @ rho @ P1)
-
-    # Build Bloch vector
-    sx = 2 * coh.real
-    sy = 2 * coh.imag
-    sz = p0 - p1
-
-    # Magnitude of Bloch vector <= 1 (purity in subspace)
-    norm = np.sqrt(sx**2 + sy**2 + sz**2)
-    if norm > 1.0:
-        sx /= norm
-        sy /= norm
-        sz /= norm
-
-    return np.array([sx, sy, sz], dtype=float)
 
 
 def rhoToBlochHybridCanonical(rhoFull, iSym, iAnti):
@@ -431,8 +391,8 @@ def plot_bloch_sphere(result: Result, tlist, labels, iSym, iAnti, sweepValues,
 
     # Precompute Bloch vectors
     blochVectors = np.array([
-        rhoToBlochSpannedSubspaces(rho, iSym, iAnti)
-        for k, rho in enumerate(states)
+        rhoToBlochHybridCanonical(rho, iSym, iAnti)
+        for rho in states
     ])
 
     fig = plt.figure(figsize=(12, 10))
@@ -485,6 +445,10 @@ def plot_bloch_sphere(result: Result, tlist, labels, iSym, iAnti, sweepValues,
     b = Bloch(fig=fig, axes=ax4)
     b.vector_color = ["#1f77b4"]
     b.point_color = ["#2ca02c"]
+    b.view = [90, 30]
+    b.xlabel = [r"$|\ominus\rangle$", r"$|\oplus\rangle$"]
+    b.ylabel = [r"$|-\rangle$", r"$|+\rangle$"]
+    b.zlabel = [r"$|S\rangle$", r"$|T\rangle$"]
 
     def drawBloch(i):
         b.clear()
@@ -525,6 +489,35 @@ def plot_rabi_vs_time(currents, tlistNano, detuningList, paramName, paramValue, 
     ax.set_title(f"Current map ({paramName} = {paramValue:.4f})")
     ax.legend()
     return fig, ax
+
+def phaseVsTime(currents, tlistNano, detuningList):
+    fig, (axCurr, axPhi) = plt.subplots(2, 1, figsize=(10, 8), sharex=True)
+    
+    phis = 2 * np.arccos(np.sqrt(currents)) * 180 / np.pi 
+    
+    for i, detuning in enumerate(detuningList):
+        axCurr.plot(
+            tlistNano,
+            currents[i, :],
+            label=f"Δ = {detuning:.4f} meV"
+        )
+    axCurr.set_ylabel("I (no Pauli Blockade)")
+    axCurr.legend(bbox_to_anchor=(1.05, 1), loc="upper left")
+    
+    for i, detuning in enumerate(detuningList):
+        axPhi.plot(
+            tlistNano,
+            phis[i, :],
+            label=f"Δ = {detuning:.4f} meV"
+        )
+    axPhi.set_xlabel("Plateau (ns)")
+    axPhi.set_ylabel("Phase φ (deg)")
+    
+    fig.tight_layout()
+    axCurr.grid()
+    axPhi.grid()
+    return fig, (axCurr, axPhi)
+
 
 def formatFrequencies(freqsGHz):
     maxFreq = np.max(freqsGHz)

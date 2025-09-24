@@ -156,14 +156,14 @@ def run_repetitive_detuning_protocol(params, parameterToChange, arrayOfParameter
         os.makedirs(figures_dir, exist_ok=True)
         os.makedirs(data_dir, exist_ok=True)
 
-        fig_filename = os.path.join(figures_dir, f"rabi_frequency_fixed_{timestamp}_{value:.3f}.png")
+        fig_filename = os.path.join(figures_dir, f"rabi_frequency_fixed_cutoff_{cutOffN if cutOffN is not None else "SWT"}_{timestamp}.png")
         fig.savefig(fig_filename, bbox_inches="tight", dpi=300)
 
-        paramsFilename = os.path.join(data_dir, f"rabi_frequency_fixed_params_{timestamp}.json")
+        paramsFilename = os.path.join(data_dir, f"rabi_frequency_fixed_params_cutoff_{cutOffN if cutOffN is not None else "SWT"}_{timestamp}.json")
         with open(paramsFilename, "w") as f:
             json.dump(params, f, indent=4)
 
-        npz_filename = os.path.join(data_dir, f"rabi_frequency_fixed_data_{timestamp}.npz")
+        npz_filename = os.path.join(data_dir, f"rabi_frequency_fixed_data_cutoff_{cutOffN if cutOffN is not None else "SWT"}_{timestamp}.npz")
         np.savez(
             npz_filename,
             tlistNano=tlistNano,
@@ -193,7 +193,7 @@ if __name__ == "__main__":
         params = json.load(f)
 
     # --- Simulation parameters ---
-    interactionDetuningList = np.linspace(4.30, 4.80, 500)
+    interactionDetuningList = np.linspace(4.3, 4.8, 500)
     cutOffN = None
     totalPoints = 2000
     maxTime = 7.5
@@ -220,7 +220,7 @@ if __name__ == "__main__":
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     figures_dir = os.path.join(current_dir, "figures")
     os.makedirs(figures_dir, exist_ok=True)
-    combined_fig_filename = os.path.join(figures_dir, f"rabi_frequency_fixed_combined_{timestamp}.png")
+    combined_fig_filename = os.path.join(figures_dir, f"rabi_frequency_fixed_combined_cutoff_{cutOffN if cutOffN is not None else "SWT"}_{timestamp}.png")
     fig.savefig(combined_fig_filename, bbox_inches="tight", dpi=300)
     plt.close(fig)
 

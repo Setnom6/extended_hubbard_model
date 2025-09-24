@@ -157,7 +157,7 @@ def computeRabiFrequencyMap(params):
             currentMap[i, j] = maxCurrent
             dominanceMap[i, j] = dominance
 
-    return detuningList, bParallelList, rabiFreqMap, currentMap, dominanceMap, params
+    return detuningList, bParallelList, rabiFreqMap, currentMap, dominanceMap, params, cutOffN
 
 # ---------------- gradient computation ----------------
 def computeGradients(detuningList, bParallelList, rabiFreqMap):
@@ -196,7 +196,7 @@ if __name__ == "__main__":
     params[DQDParameters.GV_L.value] = 0.5*params[DQDParameters.GV_R.value]
 
     # Compute 2D map
-    detuningList, bParallelList, rabiFreqMap, currentMap, dominanceMap, fixedParameters = computeRabiFrequencyMap(params)
+    detuningList, bParallelList, rabiFreqMap, currentMap, dominanceMap, fixedParameters, cutOffN = computeRabiFrequencyMap(params)
         
     # Compute gradients
     grad_detuning, grad_bparallel, grad_magnitude = computeGradients(detuningList, bParallelList, rabiFreqMap)
@@ -211,14 +211,14 @@ if __name__ == "__main__":
     os.makedirs(figures_dir, exist_ok=True)
     os.makedirs(data_dir, exist_ok=True)
 
-    fig_filename = os.path.join(figures_dir, f"rabi_frequency_analysis_{timestamp}.png")
+    fig_filename = os.path.join(figures_dir, f"rabi_frequency_analysis_cutoff_{cutOffN if cutOffN is not None else 4}_{timestamp}.png")
     fig.savefig(fig_filename, bbox_inches="tight", dpi=300)
 
-    paramsFilename = os.path.join(data_dir, f"rabi_frequency_analysis_params_{timestamp}.json")
+    paramsFilename = os.path.join(data_dir, f"rabi_frequency_analysis_params_cutoff_{cutOffN if cutOffN is not None else 4}_{timestamp}.json")
     with open(paramsFilename, "w") as f:
             json.dump(fixedParameters, f, indent=4)
 
-    npz_filename = os.path.join(data_dir, f"rabi_frequency_analysis_{timestamp}.npz")
+    npz_filename = os.path.join(data_dir, f"rabi_frequency_analysis_cutoff_{cutOffN if cutOffN is not None else 4}_{timestamp}.npz")
     np.savez(npz_filename,
                 detuningList=detuningList,
                 bParallelList=bParallelList,

@@ -37,15 +37,15 @@ dqd = DQD21(params=params)
 
 # General parameters
 
-totalPoints = 3000
+totalPoints = 2000
 T1 = 0.0  # Spin relaxation time in ns
 T2star = 0.0  # Dephasing time in ns
 cutOffN = None
 
 # Characteristic values obtained from further analysis
-interactionDetuning = 3.6102
-expectedPeriod = 11.0  # ns
-peakDetuningreadOut = dqd.params[DQDParameters.U0.value]
+interactionDetuning = 4.4954
+expectedPeriod = 1.0/0.6093  # ns
+peakDetuningreadOut = 2.0*interactionDetuning
 
 
 # Options for general protocol (comment if one wants simple evolution)
@@ -53,10 +53,10 @@ peakDetuningreadOut = dqd.params[DQDParameters.U0.value]
 parameterToChange = DQDParameters.E_R.value
 initialStateDict = {}
 slopesShapes = [
-    [peakDetuningreadOut, interactionDetuning, 2*expectedPeriod],  # Ramp down
-    [interactionDetuning, interactionDetuning, 1.45*expectedPeriod],  # Ramp up
-    [interactionDetuning, peakDetuningreadOut, 2*expectedPeriod],  # Ramp to phase point
-    [peakDetuningreadOut, peakDetuningreadOut, 1*expectedPeriod],  # Phase accumulation
+    [peakDetuningreadOut, interactionDetuning, 2*expectedPeriod],  
+    [interactionDetuning, interactionDetuning, 2.5*expectedPeriod],  
+    [interactionDetuning, peakDetuningreadOut, 2*expectedPeriod], 
+    [peakDetuningreadOut, peakDetuningreadOut, 1*expectedPeriod],  
 ]
 
 """# Options for simple evolution (uncomment if wanted)
@@ -119,14 +119,14 @@ data_dir = os.path.join(current_dir, "data")
 os.makedirs(figures_dir, exist_ok=True)
 os.makedirs(data_dir, exist_ok=True)
 
-fig_filename = os.path.join(figures_dir, f"detuning_protocol_{timestamp}.png")
+fig_filename = os.path.join(figures_dir, f"detuning_protocol_cutoff_{cutOffN}_{timestamp}.png")
 fig.savefig(fig_filename, bbox_inches="tight", dpi=300)
 
-params_filename = os.path.join(data_dir, f"detuning_protocol_params_{timestamp}.json")
+params_filename = os.path.join(data_dir, f"detuning_protocol_params_cutoff_{cutOffN}_{timestamp}.json")
 with open(params_filename, "w") as f:
     json.dump(getattr(dqd, "params", params), f, indent=4)
 
-npz_filename = os.path.join(data_dir, f"detuning_protocol_data_{timestamp}.npz")
+npz_filename = os.path.join(data_dir, f"detuning_protocol_data_cutoff_{cutOffN}_{timestamp}.npz")
 np.savez(
     npz_filename,
     tlistNano=tlistNano,
