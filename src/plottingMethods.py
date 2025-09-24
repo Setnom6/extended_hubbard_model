@@ -493,7 +493,7 @@ def plot_rabi_vs_time(currents, tlistNano, detuningList, paramName, paramValue, 
 def phaseVsTime(currents, tlistNano, detuningList):
     fig, (axCurr, axPhi) = plt.subplots(2, 1, figsize=(10, 8), sharex=True)
     
-    phis = 2 * np.arccos(np.sqrt(currents)) * 180 / np.pi 
+    phis = np.arccos(2* currents -1) * 180 / np.pi 
     
     for i, detuning in enumerate(detuningList):
         axCurr.plot(

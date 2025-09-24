@@ -13,6 +13,7 @@ from joblib import Parallel, delayed, cpu_count
 from copy import deepcopy
 from time import sleep
 from scipy.fft import fft, fftfreq
+from copy import deepcopy
 
 # Add root directory to sys.path so 'src' can be imported
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -94,13 +95,14 @@ def run_repetitive_detuning_protocol(params, interactionDetuning, expectedPeriod
     fig_filename = os.path.join(figures_dir, f"phase_frequency_fixed_cutoff_{cutOffN if cutOffN is not None else "SWT"}_{timestamp}.png")
     fig.savefig(fig_filename, bbox_inches="tight", dpi=300)
 
-    params["coherentPeriod"] = expectedPeriod
-    params["interactionDetuning"] = interactionDetuning
-    params["slopesTotalTime"] = 2*expectedPeriod
-    params["plateauDetuningList"] = plateauDetuningList 
+    params_to_save = deepcopy(params)
+    params_to_save["coherentPeriod"] = expectedPeriod
+    params_to_save["interactionDetuning"] = interactionDetuning
+    params_to_save["slopesTotalTime"] = 2*expectedPeriod
+    params_to_save["plateauDetuningList"] = plateauDetuningList 
     paramsFilename = os.path.join(data_dir, f"phase_frequency_fixed_params_cutoff_{cutOffN if cutOffN is not None else "SWT"}_{timestamp}.json")
     with open(paramsFilename, "w") as f:
-            json.dump(params, f, indent=4)
+            json.dump(params_to_save, f, indent=4)
 
     npz_filename = os.path.join(data_dir, f"phase_frequency_fixed_data_cutoff_{cutOffN if cutOffN is not None else "SWT"}_{timestamp}.npz")
     np.savez(
@@ -108,7 +110,7 @@ def run_repetitive_detuning_protocol(params, interactionDetuning, expectedPeriod
             tlistNano=tlistNano,
             currents=currents,
             eiValues=plateauDetuningList,
-            params=params,
+            params=params_to_save,
     )
 
     print(f"Figure saved to: {fig_filename}")
@@ -130,7 +132,7 @@ if __name__ == "__main__":
     with open(parameters_file, "r") as f:
         params = json.load(f)
 
-    gvLlist = [11.0, 14.66, 22.0, 33.0, 44.0]
+    gvLlist = [14.66, 22.0, 33.0, 44.0]
 
     for i, gvL in enumerate(gvLlist):
 

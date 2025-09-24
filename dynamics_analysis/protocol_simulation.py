@@ -40,7 +40,7 @@ dqd = DQD21(params=params)
 totalPoints = 2000
 T1 = 0.0  # Spin relaxation time in ns
 T2star = 0.0  # Dephasing time in ns
-cutOffN = None
+cutOffN = 22
 
 # Characteristic values obtained from further analysis
 interactionDetuning = 4.4954
@@ -54,7 +54,7 @@ parameterToChange = DQDParameters.E_R.value
 initialStateDict = {}
 slopesShapes = [
     [peakDetuningreadOut, interactionDetuning, 2*expectedPeriod],  
-    [interactionDetuning, interactionDetuning, 2.5*expectedPeriod],  
+    [interactionDetuning, interactionDetuning, 2.35*expectedPeriod],  
     [interactionDetuning, peakDetuningreadOut, 2*expectedPeriod], 
     [peakDetuningreadOut, peakDetuningreadOut, 1*expectedPeriod],  
 ]
